@@ -1,0 +1,10 @@
+# Dossiê interno de contexto — NÃO vai para o repositório público
+CONTEXTO-RETOMADA.md
+
+# Config local (estado do filtro, salvo em runtime)
+config.json
+*.log
+
+# Windows
+Thumbs.db
+desktop.ini
