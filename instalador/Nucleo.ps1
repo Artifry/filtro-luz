@@ -66,16 +66,35 @@ function Get-CurrentInstall {
     return $null
 }
 
+# Diz se o processo é de fato o tray do filtro.
+#
+# ATENÇÃO: identificar por "a linha de comando menciona FiltroLuz-Tray.ps1" mata
+# processo inocente — qualquer janela de PowerShell onde alguém digitou o nome do
+# arquivo entra na conta, inclusive o próprio script que faz a busca. O teste tem
+# de ser estrutural: o interpretador certo executando o nosso arquivo.
+function Test-EhTrayDoFiltro {
+    param($Processo)
+
+    if (-not $Processo.CommandLine) { return $false }
+
+    if ($Processo.Name -ieq 'powershell.exe') {
+        return ($Processo.CommandLine -imatch '-File\s+"?[^"]*[\\/]FiltroLuz-Tray\.ps1"?')
+    }
+    if ($Processo.Name -ieq 'wscript.exe') {
+        return ($Processo.CommandLine -imatch '"[^"]*[\\/]Filtro Luz\.vbs"\s*$' -or
+                $Processo.CommandLine -imatch '[\\/]Filtro Luz\.vbs\s*$')
+    }
+    return $false
+}
+
 # Encerra qualquer instância do filtro que esteja rodando (de qualquer pasta).
 # Retorna quantos processos foram encerrados.
 function Stop-FilterInstance {
     $alvos = @(Get-CimInstance Win32_Process -Filter "Name='powershell.exe' OR Name='wscript.exe'" -ErrorAction SilentlyContinue |
-        Where-Object { $_.CommandLine -and ($_.CommandLine -like '*FiltroLuz-Tray.ps1*' -or $_.CommandLine -like '*Filtro Luz.vbs*') })
+        Where-Object { $_.ProcessId -ne $PID -and (Test-EhTrayDoFiltro $_) })
 
     $mortos = 0
     foreach ($p in $alvos) {
-        # Não encerrar o próprio processo que está rodando o instalador.
-        if ($p.ProcessId -eq $PID) { continue }
         try { Stop-Process -Id $p.ProcessId -Force -ErrorAction Stop; $mortos++ } catch { }
     }
     if ($mortos -gt 0) { Start-Sleep -Milliseconds 700 }
@@ -222,7 +241,7 @@ function Install-App {
             # Confere no destino certo: se houver outra cópia rodando de outra pasta,
             # o teste genérico daria falso positivo.
             $vivo = @(Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue |
-                Where-Object { $_.CommandLine -like "*$Destino*FiltroLuz-Tray.ps1*" })
+                Where-Object { $_.ProcessId -ne $PID -and (Test-EhTrayDoFiltro $_) -and $_.CommandLine -like "*$Destino*" })
             if ($vivo.Count -gt 0) { [void]$passos.Add("O programa está rodando (ícone na bandeja, ao lado do relógio).") }
             else { [void]$passos.Add("Aviso: mandei abrir, mas não confirmei o processo. Use o atalho para abrir.") }
         } catch {

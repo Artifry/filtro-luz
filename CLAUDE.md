@@ -83,14 +83,38 @@ pasta quebrar o início automático em silêncio.
   ("Opções" virou "OpÃ§Ãµes"). Gravar sempre como UTF-8 **com** BOM — o `Montar-Kit.ps1` já
   reescreve os scripts do kit garantindo isso. Nos `.bat`, ao contrário, não usar acento
   nenhum: depende da página de código do console.
-- Ao procurar o processo do tray por `CommandLine -like '*FiltroLuz-Tray.ps1*'`, o próprio
-  processo que faz a busca aparece no resultado (o texto procurado está na linha de comando
-  dele). Dá falso positivo de "duas instâncias" e, pior, um script de limpeza pode se matar
-  sozinho — `Stop-FilterInstance` protege com `if ($p.ProcessId -eq $PID) { continue }`.
+- **Nunca identificar o tray por menção na linha de comando.** `CommandLine -like
+  '*FiltroLuz-Tray.ps1*'` casa com qualquer processo que apenas *cite* o nome — o próprio
+  script que faz a busca, uma janela de PowerShell do usuário, outro instalador. Isso já
+  matou um processo alheio durante os testes de 2026-09-02. O teste tem de ser estrutural,
+  e é o que `Test-EhTrayDoFiltro` (em `Nucleo.ps1` e `Encerrar.ps1`) faz: `powershell.exe`
+  com `-File` apontando para `FiltroLuz-Tray.ps1`, ou `wscript.exe` terminando em
+  `Filtro Luz.vbs`. Proteger com `$PID` não basta: o processo alheio não é o próprio.
+- No `.iss`, **não** usar `PrivilegesRequiredOverridesAllowed=dialog`: essa opção mostra a
+  tela "Selecione o Modo de Instalação" antes de tudo, e ela aparece **mesmo com
+  `/VERYSILENT`**, travando qualquer instalação automatizada (o Setup fica parado esperando
+  clique, sem nem criar o log). Com `commandline`, quem precisar instala com `/ALLUSERS`.
 - Não criar `.lnk` dentro do kit portátil: atalho guarda caminho absoluto e quebra assim que
   o kit muda de pasta ou vai para um pendrive. Os lançadores do kit são `.bat` com `%~dp0`.
 
-## Como montar o kit de instalação
+## Como gerar o instalador (.exe)
+Requer o Inno Setup 6 instalado (`ISCC.exe`). O `.exe` sai em `dist\`, que não é versionado.
+```powershell
+& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" instalador\FiltroLuz.iss
+```
+Gera `Filtro Luz_Setup_v1.0.0.exe`: instalador único, em português, que não pede
+administrador (vai para `%LOCALAPPDATA%\Programs\Filtro Luz` por padrão, com a pasta
+editável na tela), cria os atalhos, registra o início automático e aparece em Programas e
+Recursos com desinstalador próprio. Instalação/remoção sem interface:
+```powershell
+& ".\dist\Filtro Luz_Setup_v1.0.0.exe" /VERYSILENT /TASKS=desktopicon,startupicon
+& "$env:LOCALAPPDATA\Programs\Filtro Luz\unins000.exe" /VERYSILENT
+```
+Ao mudar a versão, atualizar `#define AppVersao` no `.iss` (o `AppId` é fixo e nunca muda,
+é ele que o Windows usa para reconhecer que é o mesmo programa).
+
+## Como montar o kit de instalação (alternativa sem .exe)
+Útil em máquina sem Inno Setup, ou para levar em pendrive.
 ```powershell
 .\Montar-Kit.ps1                      # kit na Área de Trabalho
 .\Montar-Kit.ps1 -Destino "E:\"       # kit num pendrive

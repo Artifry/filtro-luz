@@ -25,7 +25,27 @@ Funciona onde a Luz Noturna do Windows às vezes não funciona: monitores extern
 
 ## Instalação
 
-Monte o kit portátil e rode o instalador:
+### Instalador único (.exe)
+
+Requer o [Inno Setup 6](https://jrsoftware.org/isinfo.php) para gerar:
+
+```powershell
+& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" instalador\FiltroLuz.iss
+```
+
+Sai `dist\Filtro Luz_Setup_v1.0.0.exe` — um arquivo só, para levar a qualquer PC com
+Windows. Está em português, **não pede administrador** (instala na pasta do usuário, e a
+pasta é editável na tela), cria os atalhos, registra o início automático se você marcar, e
+aparece em "Programas e Recursos" com desinstalador próprio, que também devolve as cores da
+tela. Para automatizar em vários computadores:
+
+```powershell
+& ".\dist\Filtro Luz_Setup_v1.0.0.exe" /VERYSILENT /TASKS=desktopicon,startupicon
+```
+
+### Kit portátil (sem .exe)
+
+Não precisa de nada instalado além do Windows. Monte o kit e rode o instalador de dentro dele:
 
 ```powershell
 .\Montar-Kit.ps1                   # gera "Kit Filtro Luz" na Área de Trabalho
@@ -76,10 +96,12 @@ A configuração fica em `%APPDATA%\FiltroLuz\config.json`.
 | `Filtro Luz.vbs` | Lançador silencioso (sem console piscando) |
 | `diag.ps1` | Diagnóstico de falha de gamma por monitor |
 | `Montar-Kit.ps1` | Monta o kit de instalação portátil |
-| `instalador/` | Instalador e desinstalador (WinForms), gerador do ícone e o `LEIA-ME.txt` |
+| `instalador/FiltroLuz.iss` | Script do Inno Setup que gera o instalador único (`.exe`) |
+| `instalador/Encerrar.ps1` | Encerra o filtro e devolve as cores; usado pelo Setup e pela remoção |
+| `instalador/` (resto) | Instalador/desinstalador em WinForms, gerador do ícone e o `LEIA-ME.txt` |
 
-O kit de instalação não é versionado: ele é montado a partir destes arquivos, para não
-existirem duas cópias dos mesmos scripts para manter.
+Nem o `.exe` nem o kit são versionados: os dois são gerados a partir destes arquivos, para
+não existirem cópias dos mesmos scripts para manter em paralelo.
 
 ## Detalhes técnicos
 

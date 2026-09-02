@@ -12,3 +12,6 @@ Kit Filtro Luz.zip
 # Windows
 Thumbs.db
 desktop.ini
+
+# Instalador gerado pelo Inno Setup
+dist/
