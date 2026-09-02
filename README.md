@@ -1,6 +1,6 @@
 # Filtro Luz
 
-Filtro de luz azul para Windows, em **PowerShell puro** — sem instalador, sem dependências, sem serviço em segundo plano.
+Filtro de luz azul para Windows, em **PowerShell puro** — sem dependências, sem serviço em segundo plano e sem nada compilado (o instalador também é PowerShell).
 
 ## O que faz
 
@@ -22,6 +22,33 @@ Funciona onde a Luz Noturna do Windows às vezes não funciona: monitores extern
 
 - Windows com PowerShell 5.1 (o que já vem no sistema — não precisa do PowerShell 7)
 - Nenhuma dependência adicional
+
+## Instalação
+
+Monte o kit portátil e rode o instalador:
+
+```powershell
+.\Montar-Kit.ps1                   # gera "Kit Filtro Luz" na Área de Trabalho
+.\Montar-Kit.ps1 -Destino "E:\"    # ou direto num pendrive
+.\Montar-Kit.ps1 -Zip              # com um .zip pronto para enviar
+```
+
+No kit, dois cliques em `Instalar Filtro Luz.bat`. O instalador deixa escolher a pasta,
+cria os atalhos com ícone, registra o início automático e abre o programa — tudo dentro da
+conta do usuário, sem pedir administrador. `Desinstalar Filtro Luz.bat` desfaz tudo e
+devolve as cores da tela.
+
+Para instalar em vários computadores, sem janela:
+
+```powershell
+.\instalador\Instalar.ps1 -Silencioso -Destino "C:\Caminho\Filtro Luz"
+.\instalador\Desinstalar.ps1 -Silencioso
+```
+
+Instale **fora da pasta do repositório**: o início automático guarda o caminho absoluto,
+então trocar de branch ou renomear a pasta quebraria o boot em silêncio.
+
+Também dá para usar sem instalar nada — é só rodar da pasta do projeto:
 
 ## Uso
 
@@ -48,6 +75,11 @@ A configuração fica em `%APPDATA%\FiltroLuz\config.json`.
 | `FiltroLuz.ps1` | Versão CLI, sem interface |
 | `Filtro Luz.vbs` | Lançador silencioso (sem console piscando) |
 | `diag.ps1` | Diagnóstico de falha de gamma por monitor |
+| `Montar-Kit.ps1` | Monta o kit de instalação portátil |
+| `instalador/` | Instalador e desinstalador (WinForms), gerador do ícone e o `LEIA-ME.txt` |
+
+O kit de instalação não é versionado: ele é montado a partir destes arquivos, para não
+existirem duas cópias dos mesmos scripts para manter.
 
 ## Detalhes técnicos
 
@@ -61,6 +93,8 @@ Um detalhe importante: usar `GetDC(NULL)` (o DC genérico da tela inteira) **fal
 - **Conflito com f.lux** — os dois disputam a mesma rampa de gamma e um sobrescreve o outro silenciosamente. A bandeja detecta e avisa, mas não impede.
 - **Sem agendamento por horário** — o controle é manual por design; não liga sozinho ao anoitecer.
 - **O início automático grava o caminho absoluto** — mover ou renomear a pasta quebra o boot até reconfigurar.
+- **Encerrar o processo à força deixa a tela filtrada** — matar o tray pelo Gerenciador de Tarefas não dispara a restauração das cores. Abrir de novo e usar "Sair (restaura as cores)" resolve; o instalador e o desinstalador já restauram sozinhos.
+- **Nada impede duas cópias rodando** — as duas disputam a mesma rampa de gamma.
 
 ## Licença
 

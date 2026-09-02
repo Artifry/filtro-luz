@@ -13,7 +13,8 @@ reinícios do PC.
 - Windows PowerShell 5.1 (clássico, não PowerShell 7/Core).
 - .NET Framework via `Add-Type` (`System.Windows.Forms`, `System.Drawing`).
 - P/Invoke direto em `gdi32.dll`/`user32.dll` (`SetDeviceGammaRamp`, `CreateDC`, `DeleteDC`, `DestroyIcon`).
-- Sem dependências externas, sem internet, sem instalador.
+- Sem dependências externas e sem internet. O instalador também é PowerShell puro
+  (WinForms), não há Inno Setup nem executável compilado.
 
 ## Arquivos-chave
 - `GammaLib.ps1` → núcleo/biblioteca: classe `GammaCtl`, `Get-DisplayDevices`, `Set-BlueLightFilter -On -Level`.
@@ -22,12 +23,27 @@ reinícios do PC.
 - `Filtro Luz.vbs` → lançador silencioso (sem janela de console), usado no boot.
 - `diag.ps1` → ferramenta de diagnóstico para falhas de `SetDeviceGammaRamp` por monitor.
 - `%APPDATA%\FiltroLuz\config.json` → estado persistido (`Enabled`, `Intensity`).
+- `Montar-Kit.ps1` → monta o kit de instalação portátil (o kit não é versionado, é gerado).
+- `instalador\Nucleo.ps1` → funções compartilhadas: `Install-App`, `Uninstall-App`,
+  `Stop-FilterInstance`, `Restore-Gamma`, `New-AppShortcut`, `New-LogoBitmap`.
+- `instalador\Instalar.ps1` → janela do instalador (WinForms); aceita `-Silencioso -Destino`.
+- `instalador\Desinstalar.ps1` → remoção; aceita `-Silencioso -ApagarConfig`.
+- `instalador\Gerar-Icone.ps1` → gera o `Filtro Luz.ico` (multi-resolução, PNG embutido).
+- `instalador\LEIA-ME.txt` → documentação do usuário final, copiada para a raiz do kit.
 
 ## Estado atual
-Funciona e está em uso real (verificado em 2026-08-14): tray rodando, registrado no boot,
-config persistida, múltiplos monitores detectados e aplicando gamma sem erro. Falta:
-agendamento automático por horário (intencional, não é bug) e instalador/empacotamento
-(hoje é só copiar a pasta e rodar o `.vbs`).
+Funciona e está em uso real (verificado em 2026-09-02): tray rodando, registrado no boot,
+config persistida, dois monitores aplicando gamma sem erro (medido via
+`GetDeviceGammaRamp`: com intensidade 60, verde a 80,8% e azul a 62,8% do vermelho, como
+manda a fórmula do `GammaLib`).
+
+O kit de instalação portátil está pronto e testado de ponta a ponta (instalar em pasta
+escolhida, reinstalar por cima, desinstalar, restaurar cores). Falta apenas o agendamento
+automático por horário — que é intencional, não é bug.
+
+Instalação recomendada: **fora do repositório**. O boot grava caminho absoluto, então
+apontar a chave `Run` para a pasta do repo faz um `git checkout` ou uma renomeação de
+pasta quebrar o início automático em silêncio.
 
 ## Como rodar
 ```powershell
@@ -54,14 +70,46 @@ agendamento automático por horário (intencional, não é bug) e instalador/emp
 - A entrada de boot (`HKCU:\Software\Microsoft\Windows\CurrentVersion\Run\FiltroLuz`) grava
   o **caminho absoluto** do `.vbs`. Mover/renomear a pasta quebra o boot automático até
   refazer o clique em "Iniciar com o Windows" ou editar a chave manualmente.
-- A confirmar: se `Stop-Process -Force` no PID do tray pode não disparar o evento
-  `PowerShell.Exiting` e deixar a tela "presa" no filtro (sem caso conhecido registrado).
+- **CONFIRMADO em 2026-09-02:** `Stop-Process -Force` no PID do tray **não** dispara o
+  evento `PowerShell.Exiting`, e a tela fica presa no filtro. Medido: depois do kill, a
+  rampa continuava em 80,8%/62,8% sem ninguém para restaurar. Por isso o instalador e o
+  desinstalador chamam `Restore-Gamma` explicitamente depois de encerrar o processo —
+  qualquer código que mate o tray tem a obrigação de fazer o mesmo.
+- `Icon.ToBitmap()` do .NET Framework devolve **imagem corrompida** (ruído colorido) quando
+  o `.ico` traz PNG embutido, que é o caso do nosso ícone. Na UI, desenhar a logo por GDI+
+  em runtime (`New-LogoBitmap`) em vez de converter o `.ico`. Em `$form.Icon` o `.ico`
+  funciona normalmente; o problema é só a conversão para bitmap.
+- `.ps1` gravado **sem BOM** faz o PowerShell 5.1 estragar todos os acentos da interface
+  ("Opções" virou "OpÃ§Ãµes"). Gravar sempre como UTF-8 **com** BOM — o `Montar-Kit.ps1` já
+  reescreve os scripts do kit garantindo isso. Nos `.bat`, ao contrário, não usar acento
+  nenhum: depende da página de código do console.
+- Ao procurar o processo do tray por `CommandLine -like '*FiltroLuz-Tray.ps1*'`, o próprio
+  processo que faz a busca aparece no resultado (o texto procurado está na linha de comando
+  dele). Dá falso positivo de "duas instâncias" e, pior, um script de limpeza pode se matar
+  sozinho — `Stop-FilterInstance` protege com `if ($p.ProcessId -eq $PID) { continue }`.
+- Não criar `.lnk` dentro do kit portátil: atalho guarda caminho absoluto e quebra assim que
+  o kit muda de pasta ou vai para um pendrive. Os lançadores do kit são `.bat` com `%~dp0`.
+
+## Como montar o kit de instalação
+```powershell
+.\Montar-Kit.ps1                      # kit na Área de Trabalho
+.\Montar-Kit.ps1 -Destino "E:\"       # kit num pendrive
+.\Montar-Kit.ps1 -Zip                 # kit + .zip para enviar
+```
+O kit sai com `Instalar Filtro Luz.bat`, `Desinstalar Filtro Luz.bat`, `LEIA-ME.txt`,
+`programa\` (o app + o `.ico`) e `instalador\`. Instalar sem janela, útil em vários PCs:
+```powershell
+.\instalador\Instalar.ps1 -Silencioso -Destino "C:\Caminho\Filtro Luz"
+```
 
 ## Próximos passos
 - Agendamento automático por horário (ex.: ligar sozinho ao anoitecer) — hoje é manual por design.
-- Instalador/empacotamento formal (hoje é só copiar a pasta).
 - Atalho de teclado global.
 - Definir uma licença para o projeto.
+- Mostrar a versão dentro do app (hoje ela aparece só no instalador e no `LEIA-ME.txt`);
+  um item desabilitado no topo do menu do tray resolveria.
+- Trava de instância única no tray: hoje nada impede duas cópias rodando e brigando pela
+  mesma rampa de gamma.
 
 ## Git
 Repositório público. Branch `main`.

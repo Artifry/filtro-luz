@@ -1,0 +1,103 @@
+﻿FILTRO LUZ v1.0.0
+Filtro de luz azul para Windows
+===============================================================
+
+O QUE É
+
+   Reduz a luz azul da tela, no estilo do f.lux ou da "Luz noturna" do
+   Windows, mas funcionando também onde a Luz noturna não funciona:
+   monitores externos, drivers que ignoram a configuração do sistema e
+   máquinas onde o recurso está desativado por política.
+
+   O controle é um ícone redondo na bandeja do sistema, ao lado do
+   relógio. Não há janela: o programa fica só ali.
+
+COMO INSTALAR
+
+   1. Dê dois cliques em "Instalar Filtro Luz.bat".
+   2. Escolha a pasta (a sugerida já funciona e não pede permissão de
+      administrador) e marque as opções que quiser.
+   3. Clique em Instalar.
+
+   Este kit é portátil: pode ser copiado para um pendrive e usado em
+   qualquer computador com Windows. Não precisa de internet e não
+   instala nada além dos próprios arquivos do programa.
+
+COMO USAR
+
+   Clique esquerdo no ícone da bandeja ... liga e desliga o filtro
+   Clique direito no ícone .............. menu com a intensidade
+                                          (20% a 100%), "Iniciar com o
+                                          Windows" e "Sair"
+
+   A intensidade escolhida fica salva e volta sozinha no próximo início
+   do computador.
+
+   Se o ícone não aparecer na bandeja, ele pode estar escondido: clique
+   na setinha ao lado do relógio para ver os ícones ocultos. Para fixar,
+   arraste o ícone para a área visível.
+
+COMO DESINSTALAR
+
+   Dê dois cliques em "Desinstalar Filtro Luz.bat". Ele encerra o
+   programa, devolve as cores originais da tela, remove do início
+   automático, apaga os atalhos e os arquivos. A intensidade salva só é
+   apagada se você responder que sim na pergunta.
+
+REQUISITOS
+
+   Windows com PowerShell 5.1, que já vem no próprio sistema.
+   Nenhuma outra dependência.
+
+O QUE VOCÊ PRECISA SABER
+
+   - Conflito com o f.lux: os dois programas disputam o mesmo ajuste da
+     placa de vídeo e um sobrescreve o outro sem avisar. Use um por vez.
+     O Filtro Luz detecta o f.lux rodando e mostra um aviso.
+
+   - Sem horário automático: o filtro não liga sozinho ao anoitecer. O
+     controle é manual, por decisão de projeto.
+
+   - Se você mover ou renomear a pasta depois de instalar, o início
+     automático para de funcionar, porque ele guarda o caminho exato.
+     Nesse caso, instale de novo por este kit.
+
+   - Se o programa for encerrado à força (pelo Gerenciador de Tarefas),
+     a tela pode ficar com o tom alaranjado. Abrir o programa de novo e
+     usar "Sair (restaura as cores)" resolve. O instalador e o
+     desinstalador já devolvem as cores por conta própria.
+
+   - Se algum monitor específico não aceitar o ajuste, use a ferramenta
+     de diagnóstico: abra a pasta instalada e execute "diag.ps1".
+
+USO AVANÇADO (opcional)
+
+   Instalar sem a janela, por linha de comando - útil para configurar
+   vários computadores:
+
+      powershell -ExecutionPolicy Bypass -File "instalador\Instalar.ps1"
+         -Silencioso -Destino "C:\Caminho\Filtro Luz"
+
+   Aplicar sem o ícone da bandeja, direto pela linha de comando, na
+   pasta instalada:
+
+      powershell -ExecutionPolicy Bypass -File "FiltroLuz.ps1" -Intensidade 70
+      powershell -ExecutionPolicy Bypass -File "FiltroLuz.ps1" -Desligar
+
+O QUE TEM NESTE KIT
+
+   Instalar Filtro Luz.bat ....... instalador (duplo clique)
+   Desinstalar Filtro Luz.bat .... remove do computador
+   LEIA-ME.txt ................... este arquivo
+   programa\ ..................... os arquivos do filtro
+   instalador\ ................... os scripts do instalador
+
+ONDE FICAM AS COISAS DEPOIS DE INSTALAR
+
+   Programa ......... na pasta que você escolheu
+   Configuração ..... %APPDATA%\FiltroLuz\config.json
+   Início automático  registro do Windows, chave Run da sua conta
+                      (nada é alterado fora do seu usuário)
+
+===============================================================
+Filtro Luz v1.0.0

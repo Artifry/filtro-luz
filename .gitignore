@@ -5,6 +5,10 @@ CONTEXTO-RETOMADA.md
 config.json
 *.log
 
+# Kit gerado pelo Montar-Kit.ps1 (é montado a partir daqui, não se versiona)
+Kit Filtro Luz/
+Kit Filtro Luz.zip
+
 # Windows
 Thumbs.db
 desktop.ini
